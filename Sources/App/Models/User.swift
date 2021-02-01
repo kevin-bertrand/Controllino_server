@@ -1,0 +1,57 @@
+//
+//  User.swift
+//  
+//
+//  Created by Kevin Bertrand on 01/02/2021.
+//
+
+import Fluent
+import Vapor
+
+final class User: Model, Content {
+    static let schema: String = "users"
+    
+    //User infos
+    @ID(key: .id)
+    var id: UUID?
+    
+    @Field(key: "email")
+    var email: String?
+    
+    @Field(key: "firstname")
+    var firstname: String
+    
+    @Field(key: "name")
+    var name: String?
+    
+    @Field(key: "password_hash")
+    var passwordHash: String
+    
+    @Field(key: "job_title")
+    var jobTitle: String?
+    
+    @Field(key: "rights")
+    var rights: Rights
+    
+    //Initialization functions
+    init() { }
+    
+    init(id: UUID? = nil, email: String, firstname: String, name: String? = nil, passwordHash: String, jobTitle: String? = nil, rights: Rights) {
+        self.id = id
+        self.email = email
+        self.firstname = firstname
+        self.name = name
+        self.passwordHash = passwordHash
+        self.jobTitle = jobTitle
+        self.rights = rights
+    }
+}
+
+enum Rights: String, Codable {
+    case superAdmin
+    case admin
+    case user
+    case supervisor
+    case controller
+    case none
+}
