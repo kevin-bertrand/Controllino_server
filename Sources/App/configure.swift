@@ -20,6 +20,9 @@ public func configure(_ app: Application) throws {
     }
     
     // Add migration support
+    app.migrations.add(ControllinoMigration())
+    app.migrations.add(UserMigration())
+    app.migrations.add(UserTokenMigration())
     
     // register routes
     try routes(app)
