@@ -8,7 +8,7 @@
 import Fluent
 import Vapor
 
-struct CreateUserToken: Migration {
+struct UserTokenMigration: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
         database.schema("user_tokens")
             .id()
