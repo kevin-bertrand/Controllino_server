@@ -12,12 +12,12 @@ struct UserMigration: Migration {
     // Create DB
     func prepare(on database: Database) -> EventLoopFuture<Void> {
         return database.enum("rights")
-            .case(Rights.superAdmin.rawValue)
-            .case(Rights.admin.rawValue)
-            .case(Rights.user.rawValue)
-            .case(Rights.supervisor.rawValue)
-            .case(Rights.controller.rawValue)
-            .case(Rights.none.rawValue)
+            .case(UsersRights.superAdmin.rawValue)
+            .case(UsersRights.admin.rawValue)
+            .case(UsersRights.user.rawValue)
+            .case(UsersRights.supervisor.rawValue)
+            .case(UsersRights.controller.rawValue)
+            .case(UsersRights.none.rawValue)
             .create()
             .flatMap { rights in
                 return database.schema("users")

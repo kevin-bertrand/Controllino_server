@@ -21,22 +21,22 @@ final class User: Model, Content {
     @Field(key: "firstname")
     var firstname: String
     
-    @Field(key: "name")
+    @OptionalField(key: "name")
     var name: String?
     
     @Field(key: "password_hash")
     var passwordHash: String
     
-    @Field(key: "job_title")
+    @OptionalField(key: "job_title")
     var jobTitle: String?
     
     @Field(key: "rights")
-    var rights: Rights
+    var rights: UsersRights
     
     //Initialization functions
     init() { }
     
-    init(id: UUID? = nil, email: String, firstname: String, name: String? = nil, passwordHash: String, jobTitle: String? = nil, rights: Rights) {
+    init(id: UUID? = nil, email: String, firstname: String, name: String? = nil, passwordHash: String, jobTitle: String? = nil, rights: UsersRights) {
         self.id = id
         self.email = email
         self.firstname = firstname
@@ -47,7 +47,7 @@ final class User: Model, Content {
     }
 }
 
-enum Rights: String, Codable {
+enum UsersRights: String, Codable {
     case superAdmin
     case admin
     case user
