@@ -19,6 +19,8 @@ struct HttpStatus {
             statusToSend = HTTPResponseStatus(statusCode: 201)
         case .accepted:
             statusToSend = HTTPResponseStatus(statusCode: 202)
+        case .deleted:
+            statusToSend = HTTPResponseStatus(statusCode: 209, reasonPhrase: "Deleted")
         case .badrequest:
             statusToSend = HTTPResponseStatus(statusCode: 400)
         case .unauthorize:
@@ -35,6 +37,8 @@ struct HttpStatus {
             statusToSend = HTTPResponseStatus(statusCode: 480, reasonPhrase: "This alarm already exists!")
         case .alarmDoesntExist:
             statusToSend = HTTPResponseStatus(statusCode: 481, reasonPhrase: "Alarm with id \"(data)\" doesn't exists!")
+        case .unableToReachDb:
+            statusToSend = HTTPResponseStatus(statusCode: 520, reasonPhrase: "Unable to reach the database!")
         }
         
         return statusToSend
@@ -45,6 +49,7 @@ enum HttpStatusEnum {
     case ok
     case created
     case accepted
+    case deleted
     case badrequest
     case unauthorize
     case wrongSerialNumber
@@ -53,4 +58,5 @@ enum HttpStatusEnum {
     case userDoesntExist
     case alarmAlreadyExists
     case alarmDoesntExist
+    case unableToReachDb
 }
