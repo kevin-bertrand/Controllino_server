@@ -9,6 +9,7 @@ import Fluent
 import Vapor
 
 final class User: Model, Content {
+    static let defaultUser:[String : Any] = ["email":"admin.controllino@desyntic.com", "firstname":"Super Administrator", "password":"ueRe9eLP4d0LC60", "rights":UsersRights.superAdmin, "jobTitle":"Server administrator"]
     static let schema: String = "users"
     
     //User infos

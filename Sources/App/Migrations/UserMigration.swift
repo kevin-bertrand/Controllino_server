@@ -32,11 +32,11 @@ struct UserMigration: Migration {
                     .create()
                     // Add the default super administrator user
                     .flatMap { _ in
-                        let user = try! User(email: "admin.controllino@desyntic.com",
-                                             firstname: "Super Administrator",
-                                             passwordHash: Bcrypt.hash("ueRe9eLP4d0LC60"),
-                                             jobTitle: "Server administrator",
-                                             rights: .superAdmin)
+                        let user = try! User(email: User.defaultUser["email"] as! String,
+                                             firstname: User.defaultUser["firstname"] as! String,
+                                             passwordHash: Bcrypt.hash(User.defaultUser["password"] as! String),
+                                             jobTitle: User.defaultUser["jobTitle"] as? String,
+                                             rights: User.defaultUser["rights"] as! UsersRights)
                         return user.save(on: database)
                     }
             }
