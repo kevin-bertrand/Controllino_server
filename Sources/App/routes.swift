@@ -18,4 +18,5 @@ func routes(_ app: Application) throws {
     
     // User controller routes
     basicGroup.post("login", use: userController.login)
+    tokenGroup.post("addUser", use: userController.addUser)
 }
