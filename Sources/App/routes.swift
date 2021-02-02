@@ -21,5 +21,6 @@ func routes(_ app: Application) throws {
     tokenGroup.post("addUser", use: userController.addUser)
     tokenGroup.post("deleteUsers", use: userController.deleteUser)
     tokenGroup.post("changePassword", use: userController.changePassword)
+    tokenGroup.post("updateUser", use: userController.updateUser)
     tokenGroup.get("users", use: userController.getUsers)
 }
