@@ -9,35 +9,35 @@ import Foundation
 import Vapor
 
 struct HttpStatus {
-    func send(error: HttpErrorEnum, with data: String = "") -> HTTPResponseStatus {
-        var errorToSend: HTTPResponseStatus
+    func send(status: HttpStatusEnum, with data: String = "") -> HTTPResponseStatus {
+        var statusToSend: HTTPResponseStatus
         
-        switch error {
+        switch status {
         case .ok:
-            errorToSend = HTTPResponseStatus(statusCode: 200)
+            statusToSend = HTTPResponseStatus(statusCode: 200)
         case .created:
-            errorToSend = HTTPResponseStatus(statusCode: 201)
+            statusToSend = HTTPResponseStatus(statusCode: 201)
         case .accepted:
-            errorToSend = HTTPResponseStatus(statusCode: 202)
+            statusToSend = HTTPResponseStatus(statusCode: 202)
         case .badrequest:
-            errorToSend = HTTPResponseStatus(statusCode: 400)
+            statusToSend = HTTPResponseStatus(statusCode: 400)
         case .unauthorize:
-            errorToSend = HTTPResponseStatus(statusCode: 401)
+            statusToSend = HTTPResponseStatus(statusCode: 401)
         case .wrongSerialNumber:
-            errorToSend = HTTPResponseStatus(statusCode: 460, reasonPhrase: "Controllino with SN \"\(data)\" doesn't exist!")
+            statusToSend = HTTPResponseStatus(statusCode: 460, reasonPhrase: "Controllino with SN \"\(data)\" doesn't exist!")
         case .wrongPin:
-            errorToSend = HTTPResponseStatus(statusCode: 461, reasonPhrase: "The pin \"\(data)\" doesn't exist!")
+            statusToSend = HTTPResponseStatus(statusCode: 461, reasonPhrase: "The pin \"\(data)\" doesn't exist!")
         case .wrongPassword:
-            errorToSend = HTTPResponseStatus(statusCode: 470, reasonPhrase: "Your password is not correct!")
+            statusToSend = HTTPResponseStatus(statusCode: 470, reasonPhrase: "Your password is not correct!")
         case .userDoesntExist:
-            errorToSend = HTTPResponseStatus(statusCode: 471, reasonPhrase: "User with email \(data) doesn't exist!")
+            statusToSend = HTTPResponseStatus(statusCode: 471, reasonPhrase: "User with email \(data) doesn't exist!")
         case .alarmAlreadyExists:
-            errorToSend = HTTPResponseStatus(statusCode: 480, reasonPhrase: "This alarm already exists!")
+            statusToSend = HTTPResponseStatus(statusCode: 480, reasonPhrase: "This alarm already exists!")
         case .alarmDoesntExist:
-            errorToSend = HTTPResponseStatus(statusCode: 481, reasonPhrase: "Alarm with id \"(data)\" doesn't exists!")
+            statusToSend = HTTPResponseStatus(statusCode: 481, reasonPhrase: "Alarm with id \"(data)\" doesn't exists!")
         }
         
-        return errorToSend
+        return statusToSend
     }
 }
 
