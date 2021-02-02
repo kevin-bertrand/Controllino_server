@@ -23,6 +23,7 @@ public func configure(_ app: Application) throws {
     app.migrations.add(ControllinoMigration())
     app.migrations.add(UserMigration())
     app.migrations.add(UserTokenMigration())
+    app.migrations.add(AlarmsMigration())
     
     // register routes
     try routes(app)
