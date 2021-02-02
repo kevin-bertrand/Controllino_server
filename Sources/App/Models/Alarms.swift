@@ -52,16 +52,16 @@ final class Alarms: Model, Content {
     @Field(key: "isAccepted")
     var isAccepted: Bool
     
-    @Field(key: "isInAlarmDate")
+    @OptionalField(key: "isInAlarmDate")
     var isInAlarmDate: Date?
         
-    @Field(key: "isAcceptedDate")
+    @OptionalField(key: "isAcceptedDate")
     var isAcceptedDate: Date?
     
-    @Field(key: "lastVerification")
+    @OptionalField(key: "lastVerification")
     var lastVerification: Date?
     
-    @Field(key: "detectionDate")
+    @OptionalField(key: "detectionDate")
     var detectionDate: Date?
     
     // Inititalization functions
@@ -86,11 +86,9 @@ final class Alarms: Model, Content {
         case .boolean:
             self.pinState = pinState
             self.expression += String(pinState!)
-            self.secondPin = nil
         case .twoPin:
             self.secondPin = secondPin
             self.expression += secondPin!
-            self.pinState = nil
         }
         
         self.severity = severity
@@ -98,10 +96,6 @@ final class Alarms: Model, Content {
         self.isActive = true
         self.isInAlarm = false
         self.isAccepted = false
-        self.isInAlarmDate = nil
-        self.isAcceptedDate = nil
-        self.lastVerification = nil
-        self.detectionDate = nil
     }
 }
 
