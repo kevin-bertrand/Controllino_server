@@ -21,7 +21,7 @@ final class Controllino: Model, Content {
     @Field(key: "last_modification_date")
     var lastModificationDate: Date
     
-    @Field(key: "tyoe")
+    @Field(key: "type")
     var type: ControllinoType
     
     @Field(key: "latitude")
@@ -222,11 +222,22 @@ final class Controllino: Model, Content {
     // Initialization functions
     init() {}
     
-    init(id: String, type: ControllinoType, latitude: Double? = 0.0, longitude: Double? = 0.0, ipAddress: String? = nil) {
+    init(id: String, type: ControllinoType, latitude: Double?, longitude: Double?, ipAddress: String? = nil) {
         self.id = id
         self.type = type
-        self.latitude = latitude!
-        self.longitude = longitude!
+        
+        if let latitude = latitude {
+            self.latitude = latitude
+        } else {
+            self.latitude = 0.0
+        }
+        
+        if let longitude = longitude {
+            self.longitude = longitude
+        } else {
+            self.longitude = 0.0
+        }
+        
         self.ipAddress = ipAddress
         self.creationDate = Date.init()
         self.lastModificationDate = self.creationDate
