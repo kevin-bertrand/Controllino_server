@@ -25,14 +25,23 @@ final class Alarms: Model, Content {
     @Field(key: "type_of_verification")
     var typeOfVerification: TypeOfVerification
     
+    @Field(key: "operation")
+    var operation: OperationVerification
+    
     @OptionalField(key: "pin_state")
     var pinState: Bool?
     
     @OptionalField(key: "second_pin")
     var secondPin: String?
+    
+    @Field(key: "expression")
+    var expression: String
         
     @Field(key: "severity")
-    var severity: String
+    var severity: Severity
+    
+    @Field(key: "inhibits_all_alarms")
+    var inhibitsAllAlarms: Bool
     
     @Field(key: "isActive")
     var isActive: Bool
@@ -58,21 +67,34 @@ final class Alarms: Model, Content {
     // Inititalization functions
     init() { }
     
-    init(id: UUID? = nil, controllinoId: Controllino.IDValue, pinToVerify: String, typeOfVerification: TypeOfVerification, secondPin: String? = nil, pinState: Bool? = nil) {
+    init(id: UUID? = nil, controllinoId: Controllino.IDValue, pinToVerify: String, typeOfVerification: TypeOfVerification, operation: OperationVerification, secondPin: String? = nil, pinState: Bool? = nil, severity: Severity, inhibitsAllAlarms: Bool) {
         self.id = id
         self.$controllino.id = controllinoId
         self.pinToVerify = pinToVerify
         self.typeOfVerification = typeOfVerification
+        self.operation = operation
+        self.expression = pinToVerify
+        
+        switch operation {
+        case .different:
+            self.expression += "!="
+        case .equal:
+            self.expression += "=="
+        }
         
         switch self.typeOfVerification {
         case .boolean:
             self.pinState = pinState
+            self.expression += String(pinState!)
             self.secondPin = nil
         case .twoPin:
             self.secondPin = secondPin
+            self.expression += secondPin!
             self.pinState = nil
         }
         
+        self.severity = severity
+        self.inhibitsAllAlarms = inhibitsAllAlarms
         self.isActive = true
         self.isInAlarm = false
         self.isAccepted = false
@@ -81,6 +103,11 @@ final class Alarms: Model, Content {
         self.lastVerification = nil
         self.detectionDate = nil
     }
+}
+
+enum OperationVerification: String, Codable {
+    case equal
+    case different
 }
 
 enum TypeOfVerification: String, Codable {
