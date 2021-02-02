@@ -11,6 +11,7 @@ import Vapor
 func routes(_ app: Application) throws {
     // Controllers
     let userController = UserController()
+    let controllinoController = ControllinoController()
     
     // Group creation
     let basicGroup = app.grouped(User.authenticator()).grouped(User.guardMiddleware())
@@ -23,4 +24,7 @@ func routes(_ app: Application) throws {
     tokenGroup.post("changePassword", use: userController.changePassword)
     tokenGroup.post("updateUser", use: userController.updateUser)
     tokenGroup.get("users", use: userController.getUsers)
+    
+    // Controllino controller routes
+    tokenGroup.post("addControllino", use: controllinoController.addControllino)
 }
