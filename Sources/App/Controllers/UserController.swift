@@ -68,6 +68,48 @@ struct UserController {
             }
     }
     
+    // Delete a list of users
+    func deleteUser(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        let receivedData = try req.content.decode(User.DeleteUser.self)
+        var query = "DELETE FROM users WHERE "
+        var firstEmail = true
+        
+        for email in receivedData.emails {
+            if email != User.defaultUser["email"] as! String {
+                if !firstEmail {
+                    query += " OR "
+                }
+                
+                query += "email == \"\(email)\""
+                firstEmail = false
+            }
+        }
+        
+        return performSqlQueries(inside: req, with: query, by: userAuth)
+    }
+    
+    // Change password of the current user
+    func changePassword(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        var receivedData = try req.content.decode(User.ChangePassword.self)
+        receivedData.newPassword = try Bcrypt.hash(receivedData.newPassword)
+        
+        return User.find(userAuth.id, on: req.db)
+            .guard({ _ -> Bool in
+                do {
+                    return try userAuth.verify(password: receivedData.oldPassword)
+                } catch {
+                    return false
+                }
+            }, else: Abort(HttpStatus().send(status: .wrongPassword)))
+            .flatMap { user -> EventLoopFuture<HTTPStatus> in
+                updatePassword(user, inside: req, with: receivedData)
+            }
+    }
+    
     /*
      Private functions
      */
@@ -88,6 +130,28 @@ struct UserController {
         }
         
         return rights
+    }
+    
+    private func updatePassword(_ user: User?, inside req: Request, with data: User.ChangePassword) -> EventLoopFuture<HTTPStatus> {
+        if let user = user,
+           let sql = req.db as? SQLDatabase {
+            return sql.update("users")
+                .set("password_hash", to: data.newPassword)
+                .where("email", .equal, user.email)
+                .run()
+                .transform(to: .ok)
+        } else {
+            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
+        }
+    }
+    
+    private func performSqlQueries(inside req: Request, with query: String, by user: User) -> EventLoopFuture<HTTPStatus> {
+        if let sql = req.db as? SQLDatabase,
+           user.rights == .superAdmin || user.rights == .admin {
+            return sql.raw(SQLQueryString(query)).run().transform(to: .ok)
+        } else {
+            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
+        }
     }
 }
 
@@ -115,6 +179,15 @@ extension User {
         let name: String
         let rights: UsersRights
         let jobTitle: String
+    }
+    
+    struct DeleteUser: Content {
+        let emails: [String]
+    }
+    
+    struct ChangePassword: Content {
+        let oldPassword: String
+        var newPassword: String
     }
 }
 
