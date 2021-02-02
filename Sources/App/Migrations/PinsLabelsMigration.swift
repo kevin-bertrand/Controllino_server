@@ -1,5 +1,5 @@
 //
-//  PinsLabelMigration.swift
+//  PinsLabelsMigration.swift
 //  
 //
 //  Created by Kevin Bertrand on 02/02/2021.
