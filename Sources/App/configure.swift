@@ -24,6 +24,7 @@ public func configure(_ app: Application) throws {
     app.migrations.add(UserMigration())
     app.migrations.add(UserTokenMigration())
     app.migrations.add(AlarmsMigration())
+    app.migrations.add(PinsLabelsMigration())
     
     // register routes
     try routes(app)
