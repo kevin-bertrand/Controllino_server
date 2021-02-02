@@ -47,6 +47,27 @@ struct UserController {
             }
     }
     
+    // Get all user in database
+    func getUsers(req: Request) throws -> EventLoopFuture<[User.UserList]> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        
+        return User.query(on: req.db)
+            .all()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .admin || userAuth.rights == .superAdmin
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .map { users -> [User.UserList] in
+                var userList: [User.UserList] = []
+                
+                for user in users {
+                    userList.append(User.UserList(email: user.email, firstname: user.firstname, name: user.name ?? "", rights: user.rights, jobTitle: user.jobTitle ?? ""))
+                }
+                
+                return userList
+            }
+    }
+    
     /*
      Private functions
      */
@@ -86,6 +107,14 @@ extension User {
         let email: String
         let rights: UsersRights
         let tokenValue: String
+    }
+    
+    struct UserList: Content {
+        let email: String
+        let firstname: String
+        let name: String
+        let rights: UsersRights
+        let jobTitle: String
     }
 }
 
