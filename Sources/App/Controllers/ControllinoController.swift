@@ -68,7 +68,7 @@ struct ControllinoController {
             }
     }
     
-    // Get all user in database
+    // Get all Controllinos in database
     func getControllinos(req: Request) throws -> EventLoopFuture<[Controllino.List]> {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
@@ -86,6 +86,21 @@ struct ControllinoController {
                 }
                 
                 return controllinoList
+            }
+    }
+    
+    // Get a unique Controllinos from database
+    func getUniqueControllino(req: Request) throws -> EventLoopFuture<Controllino> {
+        let serialNumber = req.parameters.get("serialNumber")
+        
+        return Controllino.query(on: req.db)
+            .filter(\.$id == serialNumber ?? "")
+            .first()
+            .guard({ controllino -> Bool in
+                return controllino != nil
+            }, else: Abort(HttpStatus().send(status: .wrongSerialNumber, with: serialNumber ?? "")))
+            .map { controllino -> Controllino in
+                return controllino!
             }
     }
     
