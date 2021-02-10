@@ -35,6 +35,39 @@ struct ControllinoController {
             }
     }
     
+    // Delete a list of users
+    func deleteControllino(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        let receivedData = try req.content.decode(Controllino.Delete.self)
+        var queryControllino = "DELETE FROM controllino WHERE "
+        var queryLabels = "DELETE FROM pins_labels WHERE "
+        var queryAlarms = "DELETE FROM alarms WHERE "
+        var firstSerialNumber = true
+        
+        for serialNumber in receivedData.serialNumbers {
+            if !firstSerialNumber {
+                queryControllino += " OR "
+                queryLabels += " OR "
+                queryAlarms += " OR "
+            }
+            
+            queryControllino += "serial_number == \"\(serialNumber)\""
+            queryLabels += "controllino_id == \"\(serialNumber)\""
+            queryAlarms += "controllino_id == \"\(serialNumber)\""
+            firstSerialNumber = false
+        }
+        print("ok")
+        
+        return performSqlQueries(inside: req, with: queryAlarms, by: userAuth)
+            .flatMap { _ in
+                return performSqlQueries(inside: req, with: queryLabels, by: userAuth)
+                    .flatMap { _ in
+                        return performSqlQueries(inside: req, with: queryControllino, by: userAuth)
+                    }
+            }
+    }
+    
     /*
      Private functions
      */
@@ -46,6 +79,15 @@ struct ControllinoController {
             return .maxi;
         }
     }
+    
+    private func performSqlQueries(inside req: Request, with query: String, by user: User) -> EventLoopFuture<HTTPStatus> {
+        if let sql = req.db as? SQLDatabase,
+           user.rights == .superAdmin || user.rights == .admin || user.rights == .user {
+            return sql.raw(SQLQueryString(query)).run().transform(to: .ok)
+        } else {
+            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
+        }
+    }
 }
 
 extension Controllino {
@@ -55,5 +97,9 @@ extension Controllino {
         var latitude: Double?
         var longitude: Double?
         var ipAddress: String?
+    }
+    
+    struct Delete: Content {
+        let serialNumbers: [String]
     }
 }

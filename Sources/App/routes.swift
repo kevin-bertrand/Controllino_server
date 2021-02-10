@@ -27,4 +27,5 @@ func routes(_ app: Application) throws {
     
     // Controllino controller routes
     tokenGroup.post("addControllino", use: controllinoController.addControllino)
+    tokenGroup.post("deleteControllinos", use: controllinoController.deleteControllino)
 }
