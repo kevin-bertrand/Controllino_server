@@ -15,11 +15,11 @@ struct UserController {
      Public functions for HTTP requests
      */
     // First login of one User with Basic Auth to get token
-    func login(req: Request) throws -> EventLoopFuture<User.UserInformations> {
+    func login(req: Request) throws -> EventLoopFuture<User.Informations> {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
         let token = try userAuth.generateToken()
-        let userInformations = User.UserInformations(firstname: userAuth.firstname, name: userAuth.name ?? "", email: userAuth.email, rights: userAuth.rights, tokenValue: token.value)
+        let userInformations = User.Informations(firstname: userAuth.firstname, name: userAuth.name ?? "", email: userAuth.email, rights: userAuth.rights, tokenValue: token.value)
         
         return token.save(on: req.db).transform(to: userInformations)
     }
@@ -48,7 +48,7 @@ struct UserController {
     }
     
     // Get all user in database
-    func getUsers(req: Request) throws -> EventLoopFuture<[User.UserList]> {
+    func getUsers(req: Request) throws -> EventLoopFuture<[User.List]> {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
         
@@ -57,11 +57,11 @@ struct UserController {
             .guard({ _ -> Bool in
                 return userAuth.rights == .admin || userAuth.rights == .superAdmin
             }, else: Abort(HttpStatus().send(status: .unauthorize)))
-            .map { users -> [User.UserList] in
-                var userList: [User.UserList] = []
+            .map { users -> [User.List] in
+                var userList: [User.List] = []
                 
                 for user in users {
-                    userList.append(User.UserList(email: user.email, firstname: user.firstname, name: user.name ?? "", rights: user.rights, jobTitle: user.jobTitle ?? ""))
+                    userList.append(User.List(email: user.email, firstname: user.firstname, name: user.name ?? "", rights: user.rights, jobTitle: user.jobTitle ?? ""))
                 }
                 
                 return userList
@@ -72,7 +72,7 @@ struct UserController {
     func deleteUser(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
-        let receivedData = try req.content.decode(User.DeleteUser.self)
+        let receivedData = try req.content.decode(User.Delete.self)
         var query = "DELETE FROM users WHERE "
         var firstEmail = true
         
@@ -208,7 +208,7 @@ extension User {
         let jobTitle: String?
     }
     
-    struct UserInformations: Content, Codable {
+    struct Informations: Content, Codable {
         let firstname: String
         let name: String
         let email: String
@@ -216,7 +216,7 @@ extension User {
         let tokenValue: String
     }
     
-    struct UserList: Content {
+    struct List: Content {
         let email: String
         let firstname: String
         let name: String
@@ -224,7 +224,7 @@ extension User {
         let jobTitle: String
     }
     
-    struct DeleteUser: Content {
+    struct Delete: Content {
         let emails: [String]
     }
     
