@@ -68,6 +68,27 @@ struct ControllinoController {
             }
     }
     
+    // Get all user in database
+    func getControllinos(req: Request) throws -> EventLoopFuture<[Controllino.List]> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        
+        return Controllino.query(on: req.db)
+            .all()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .user || userAuth.rights == .admin || userAuth.rights == .superAdmin
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .map { controllinos -> [Controllino.List] in
+                var controllinoList: [Controllino.List] = []
+                
+                for controllino in controllinos {
+                    controllinoList.append(Controllino.List(serialNumber: controllino.id!, type: controllino.type, latitude: controllino.latitude, longitude: controllino.longitude, ipAddress: controllino.ipAddress ?? "0.0.0.0"))
+                }
+                
+                return controllinoList
+            }
+    }
+    
     /*
      Private functions
      */
@@ -92,14 +113,22 @@ struct ControllinoController {
 
 extension Controllino {
     struct Create: Content {
-        var serialNumber: String
-        var type: String
-        var latitude: Double?
-        var longitude: Double?
-        var ipAddress: String?
+        let serialNumber: String
+        let type: String
+        let latitude: Double?
+        let longitude: Double?
+        let ipAddress: String?
     }
     
     struct Delete: Content {
         let serialNumbers: [String]
+    }
+    
+    struct List: Content {
+        let serialNumber: String
+        let type: ControllinoType
+        let latitude: Double
+        let longitude: Double
+        let ipAddress: String
     }
 }

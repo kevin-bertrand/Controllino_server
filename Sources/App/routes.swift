@@ -23,9 +23,10 @@ func routes(_ app: Application) throws {
     tokenGroup.post("deleteUsers", use: userController.deleteUser)
     tokenGroup.post("changePassword", use: userController.changePassword)
     tokenGroup.post("updateUser", use: userController.updateUser)
-    tokenGroup.get("users", use: userController.getUsers)
+    tokenGroup.get("getUsers", use: userController.getUsers)
     
     // Controllino controller routes
     tokenGroup.post("addControllino", use: controllinoController.addControllino)
     tokenGroup.post("deleteControllinos", use: controllinoController.deleteControllino)
+    tokenGroup.get("getControllinos", use: controllinoController.getControllinos)
 }
