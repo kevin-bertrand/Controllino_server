@@ -30,4 +30,5 @@ func routes(_ app: Application) throws {
     app.get("getControllinos", use: controllinoController.getControllinos)
     tokenGroup.post("addControllino", use: controllinoController.addControllino)
     tokenGroup.post("deleteControllinos", use: controllinoController.deleteControllino)
+    tokenGroup.post("updateControllino", use: controllinoController.updateControllino)
 }
