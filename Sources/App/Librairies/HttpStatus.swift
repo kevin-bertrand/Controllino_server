@@ -29,6 +29,8 @@ struct HttpStatus {
             statusToSend = HTTPResponseStatus(statusCode: 460, reasonPhrase: "Controllino with SN \"\(data)\" doesn't exist!")
         case .wrongPin:
             statusToSend = HTTPResponseStatus(statusCode: 461, reasonPhrase: "The pin \"\(data)\" doesn't exist!")
+        case .wrongIp:
+            statusToSend = HTTPResponseStatus(statusCode: 462, reasonPhrase: "The IP \"\(data)\" is not correct!")
         case .wrongPassword:
             statusToSend = HTTPResponseStatus(statusCode: 470, reasonPhrase: "Your password is not correct!")
         case .userDoesntExist:
@@ -54,6 +56,7 @@ enum HttpStatusEnum {
     case unauthorize
     case wrongSerialNumber
     case wrongPin
+    case wrongIp
     case wrongPassword
     case userDoesntExist
     case alarmAlreadyExists

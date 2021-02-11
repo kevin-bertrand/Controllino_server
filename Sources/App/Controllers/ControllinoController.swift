@@ -103,7 +103,7 @@ struct ControllinoController {
             }
     }
     
-    // Update localisation, type and serial number
+    // Update localisation, type
     func updateControllino(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
@@ -138,6 +138,25 @@ struct ControllinoController {
             }
     }
     
+    // Update IP Address
+    func updateIpAdress(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let userAuth = try req.auth.require(User.self)
+        let receivedData = try req.content.decode(Controllino.UpdateIP.self)
+        
+        return Controllino.query(on: req.db)
+            .filter(\.$id == receivedData.serialNumber)
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .user || userAuth.rights == .admin || userAuth.rights == .superAdmin || userAuth.rights == .controller
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ _ -> Bool in
+                return checkIpFormat(receivedData.ipAddress)
+            }, else: Abort(HttpStatus().send(status: .wrongIp, with: receivedData.ipAddress)))
+            .flatMap { controllino -> EventLoopFuture<HTTPStatus> in
+                return updateIpAddress(inside: req, with: receivedData)
+            }
+    }
+    
     /*
      Private functions
      */
@@ -150,10 +169,43 @@ struct ControllinoController {
         }
     }
     
+    private func checkIpFormat(_ ip: String) -> Bool {
+        var result = true
+        let ipArray = ip.components(separatedBy: ".")
+        
+        if ipArray.count == 4 {
+            for byte in ipArray {
+                if byte.count == 0 || byte.count > 3 || Int(byte) == nil {
+                    result = false
+                }
+                if let intByte = Int(byte),
+                   intByte < 0 || intByte > 255 {
+                    result = false
+                }
+            }
+        } else {
+            result = false
+        }
+        
+        return result
+    }
+    
     private func performSqlQueries(inside req: Request, with query: String, by user: User) -> EventLoopFuture<HTTPStatus> {
         if let sql = req.db as? SQLDatabase,
            user.rights == .superAdmin || user.rights == .admin || user.rights == .user {
             return sql.raw(SQLQueryString(query)).run().transform(to: .ok)
+        } else {
+            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
+        }
+    }
+    
+    private func updateIpAddress(inside req: Request, with data: Controllino.UpdateIP) -> EventLoopFuture<HTTPStatus> {
+        if let sql = req.db as? SQLDatabase {
+            return sql.update("controllino")
+                .set("ip_address", to: data.ipAddress)
+                .where("serial_number", .equal, data.serialNumber)
+                .run()
+                .transform(to: .ok)
         } else {
             return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
         }
@@ -267,5 +319,10 @@ extension Controllino {
         let latitude: Double
         let longitude: Double
         let type: String
+    }
+    
+    struct UpdateIP: Content {
+        let serialNumber: String
+        let ipAddress: String
     }
 }
