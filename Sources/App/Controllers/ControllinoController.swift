@@ -130,7 +130,7 @@ struct ControllinoController {
                             return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
                         }
                         if typeIsChanged {
-                            return updateControllinoType(type, at: controllino!.id ?? "", inside: req, by: userAuth)
+                            return updateControllinoType(type, at: receivedData.serialNumber, inside: req, by: userAuth)
                         } else {
                             return EventLoopFutureReturn().errorHttpStatus(on: req, withError: .ok)
                         }
