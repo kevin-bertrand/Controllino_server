@@ -172,11 +172,7 @@ struct UserController {
      */
     // This function checks if the DB of the request is an SQL DB
     private func checkSqlDB(of req: Request) -> Bool {
-        if let _ = req.db as? SQLDatabase {
-            return true
-        } else {
-            return false
-        }
+        return req.db is SQLDatabase
     }
     
     private func getSqlDB(of req: Request) -> SQLDatabase {
