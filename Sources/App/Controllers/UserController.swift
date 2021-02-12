@@ -116,7 +116,7 @@ struct UserController {
                 return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { user -> EventLoopFuture<HTTPStatus> in
-                updatePassword(user!, inside: req.db as! SQLDatabase, with: receivedData)
+                updatePassword(user!, inside: getSqlDB(of: req), with: receivedData)
             }
     }
     
@@ -139,7 +139,7 @@ struct UserController {
                return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { user -> EventLoopFuture<HTTPStatus> in
-                updateUser(user!, inside: req.db as! SQLDatabase, with: receivedData, by: userAuth)
+                updateUser(user!, inside: getSqlDB(of: req), with: receivedData, by: userAuth)
             }
     }
     
@@ -153,6 +153,10 @@ struct UserController {
         } else {
             return false
         }
+    }
+    
+    private func getSqlDB(of req: Request) -> SQLDatabase {
+        return req.db as! SQLDatabase
     }
     
     // This function check rights from the create of a user and return the correct right from the enum 'Rights'

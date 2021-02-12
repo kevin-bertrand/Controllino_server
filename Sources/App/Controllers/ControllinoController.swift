@@ -147,7 +147,7 @@ struct ControllinoController {
                 if controllino!.type != type {
                     typeIsChanged = true
                 }
-                return updateControllinoInfos(controllino!, inside: req.db as! SQLDatabase, with: receivedData, and: type)
+                return updateControllinoInfos(controllino!, inside: getSqlDB(of: req), with: receivedData, and: type)
                     .flatMap { _ -> EventLoopFuture<HTTPStatus> in
                         if typeIsChanged {
                             return updateControllinoType(type, at: receivedData.serialNumber, inside: req, by: userAuth)
@@ -180,7 +180,7 @@ struct ControllinoController {
                 return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { controllino -> EventLoopFuture<HTTPStatus> in
-                return updateIpAddress(inside: req.db as! SQLDatabase, with: receivedData)
+                return updateIpAddress(inside: getSqlDB(of: req), with: receivedData)
             }
     }
     
@@ -209,7 +209,7 @@ struct ControllinoController {
                 return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { _ -> EventLoopFuture<HTTPStatus> in
-                updateOnePin(with: receivedData.serialNumber, inside: req.db as! SQLDatabase, at: pin!, value: receivedData.value, at: date)
+                updateOnePin(with: receivedData.serialNumber, inside: getSqlDB(of: req), at: pin!, value: receivedData.value, at: date)
             }
     }
     
@@ -259,7 +259,7 @@ struct ControllinoController {
                     receivedData.r14 = nil
                     receivedData.r15 = nil
                 }
-                return updateAllPin(inside: req.db as! SQLDatabase, with: receivedData, at: date)
+                return updateAllPin(inside: getSqlDB(of: req), with: receivedData, at: date)
             }
     }
     
@@ -268,11 +268,11 @@ struct ControllinoController {
      */
     // This function checks if the DB of the request is an SQL DB
     private func checkSqlDB(of req: Request) -> Bool {
-        if let _ = req.db as? SQLDatabase {
-            return true
-        } else {
-            return false
-        }
+        return req.db is SQLDatabase
+    }
+    
+    private func getSqlDB(of req: Request) -> SQLDatabase {
+        return req.db as! SQLDatabase
     }
     
     // This function check the type of the controllino. If the type is not correctly set, it will be set into Controllino Maxi
@@ -308,7 +308,8 @@ struct ControllinoController {
     private func performSqlQueries(inside req: Request, with query: String, by user: User) -> EventLoopFuture<HTTPStatus> {
         if let sql = req.db as? SQLDatabase,
            user.rights == .superAdmin || user.rights == .admin || user.rights == .user {
-            return sql.raw(SQLQueryString(query)).run().transform(to: .ok)
+            return sql.raw(SQLQueryString(query)).run()
+                .transform(to: .ok)
         } else {
             return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
         }
