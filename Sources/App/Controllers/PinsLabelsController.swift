@@ -21,6 +21,25 @@ struct PinsLabelsController {
                 userAuth.rights != .none && userAuth.rights != .controller
             }, else: Abort(HttpStatus().send(status: .unauthorize)))
     }
+    
+    func getOneControllerLabels(req: Request) throws -> EventLoopFuture<PinsLabels> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        let serialNumber = req.parameters.get("serialNumber")
+        
+        return PinsLabels.query(on: req.db)
+            .filter(\.$controllino.$id == serialNumber ?? "")
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights != .none && userAuth.rights != .controller
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ labels -> Bool in
+                return labels != nil
+            }, else: Abort(HttpStatus().send(status: .wrongSerialNumber, with: serialNumber ?? "")))
+            .map { labels -> PinsLabels in
+                return labels!
+            }
+    }
 }
 
 extension PinsLabels {
