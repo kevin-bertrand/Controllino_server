@@ -25,6 +25,7 @@ func routes(_ app: Application) throws {
     tokenGroup.post("changePassword", use: userController.changePassword)
     tokenGroup.post("updateUser", use: userController.updateUser)
     tokenGroup.get("getUsers", use: userController.getUsers)
+    tokenGroup.get("getOneUser", ":email", use: userController.getOneUser)
     
     // Controllino controller routes
     app.get("getUniqueControllino", ":serialNumber", use: controllinoController.getUniqueControllino)

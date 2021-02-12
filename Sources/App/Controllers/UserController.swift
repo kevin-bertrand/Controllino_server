@@ -72,6 +72,30 @@ struct UserController {
             }
     }
     
+    // Get one user
+    func getOneUser(req: Request) throws -> EventLoopFuture<User.List> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        let email = req.parameters.get("email")
+        
+        return User.query(on: req.db)
+            .filter(\.$email == email ?? "")
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .admin || userAuth.rights == .superAdmin
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ user -> Bool in
+                return user != nil
+            }, else: Abort(HttpStatus().send(status: .userDoesntExist, with: email ?? "")))
+            .map { user -> User.List in
+                return User.List(email: user!.email,
+                                 firstname: user!.firstname,
+                                 name: user!.name ?? "",
+                                 rights: user!.rights,
+                                 jobTitle: user!.jobTitle ?? "")
+            }
+    }
+    
     // Delete a list of users
     func deleteUser(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         // Get user after authentification
