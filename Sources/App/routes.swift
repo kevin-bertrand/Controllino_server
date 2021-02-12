@@ -39,4 +39,5 @@ func routes(_ app: Application) throws {
     // Labels controller routes
     tokenGroup.get("getAllLabels", use: pinsLabelsController.getAllLabels)
     tokenGroup.get("getOneControllerLabels", ":serialNumber", use: pinsLabelsController.getOneControllerLabels)
+    tokenGroup.post("modifyLabels", use: pinsLabelsController.modifyLabels)
 }

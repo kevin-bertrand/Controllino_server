@@ -11,6 +11,9 @@ import Foundation
 import Vapor
 
 struct PinsLabelsController {
+    /*
+     Public functions for HTTP requests
+     */
     func getAllLabels(req: Request) throws -> EventLoopFuture<[PinsLabels]> {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
@@ -40,9 +43,119 @@ struct PinsLabelsController {
                 return labels!
             }
     }
+    
+    // Modify labels for one Controllino
+    func modifyLabels(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
+        
+        // Try to decode received data
+        let receivedData = try req.content.decode(PinsLabels.Modify.self)
+        
+        return PinsLabels.query(on: req.db)
+            .filter(\.$controllino.$id == receivedData.serialNumber)
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .admin || userAuth.rights == .user || userAuth.rights == .superAdmin
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ pinsLabels -> Bool in
+                return pinsLabels != nil
+            }, else: Abort(HttpStatus().send(status: .wrongSerialNumber, with: receivedData.serialNumber)))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
+            .flatMap { controllinoLabel -> EventLoopFuture<HTTPStatus> in
+                return updateLabels(inside: getSqlDB(of: req), with: receivedData)
+            }
+    }
+    
+    /*
+     Private functions
+     */
+    // This function checks if the DB of the request is an SQL DB
+    private func checkSqlDB(of req: Request) -> Bool {
+        return req.db is SQLDatabase
+    }
+    
+    private func getSqlDB(of req: Request) -> SQLDatabase {
+        return req.db as! SQLDatabase
+    }
+    
+    private func updateLabels(inside sql: SQLDatabase, with data: PinsLabels.Modify) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(PinsLabels.schema)
+            .set("LabelA0", to: data.labels.labelA0)
+            .set("LabelA1", to: data.labels.labelA1)
+            .set("LabelA2", to: data.labels.labelA2)
+            .set("LabelA3", to: data.labels.labelA3)
+            .set("LabelA4", to: data.labels.labelA4)
+            .set("LabelA5", to: data.labels.labelA5)
+            .set("LabelA6", to: data.labels.labelA6)
+            .set("LabelA7", to: data.labels.labelA7)
+            .set("LabelA8", to: data.labels.labelA8)
+            .set("LabelA9", to: data.labels.labelA9)
+            .set("LabelA10", to: data.labels.labelA10)
+            .set("LabelA11", to: data.labels.labelA11)
+            .set("LabelA12", to: data.labels.labelA12)
+            .set("LabelA13", to: data.labels.labelA13)
+            .set("LabelA14", to: data.labels.labelA14)
+            .set("LabelA15", to: data.labels.labelA15)
+            .set("LabelI16", to: data.labels.labelI16)
+            .set("LabelI17", to: data.labels.labelI17)
+            .set("LabelI18", to: data.labels.labelI18)
+            .set("LabelInt0", to: data.labels.labelInt0)
+            .set("LabelInt1", to: data.labels.labelInt1)
+            .set("LabelD0", to: data.labels.labelD0)
+            .set("LabelD1", to: data.labels.labelD1)
+            .set("LabelD2", to: data.labels.labelD2)
+            .set("LabelD3", to: data.labels.labelD3)
+            .set("LabelD4", to: data.labels.labelD4)
+            .set("LabelD5", to: data.labels.labelD5)
+            .set("LabelD6", to: data.labels.labelD6)
+            .set("LabelD7", to: data.labels.labelD7)
+            .set("LabelD8", to: data.labels.labelD8)
+            .set("LabelD9", to: data.labels.labelD9)
+            .set("LabelD10", to: data.labels.labelD10)
+            .set("LabelD11", to: data.labels.labelD11)
+            .set("LabelD12", to: data.labels.labelD12)
+            .set("LabelD13", to: data.labels.labelD13)
+            .set("LabelD14", to: data.labels.labelD14)
+            .set("LabelD15", to: data.labels.labelD15)
+            .set("LabelD16", to: data.labels.labelD16)
+            .set("LabelD17", to: data.labels.labelD17)
+            .set("LabelD18", to: data.labels.labelD18)
+            .set("LabelD19", to: data.labels.labelD19)
+            .set("LabelD20", to: data.labels.labelD20)
+            .set("LabelD21", to: data.labels.labelD21)
+            .set("LabelD22", to: data.labels.labelD22)
+            .set("LabelD23", to: data.labels.labelD23)
+            .set("LabelR0", to: data.labels.labelR0)
+            .set("LabelR1", to: data.labels.labelR1)
+            .set("LabelR2", to: data.labels.labelR2)
+            .set("LabelR3", to: data.labels.labelR3)
+            .set("LabelR4", to: data.labels.labelR4)
+            .set("LabelR5", to: data.labels.labelR5)
+            .set("LabelR6", to: data.labels.labelR6)
+            .set("LabelR7", to: data.labels.labelR7)
+            .set("LabelR8", to: data.labels.labelR8)
+            .set("LabelR9", to: data.labels.labelR9)
+            .set("LabelR10", to: data.labels.labelR10)
+            .set("LabelR11", to: data.labels.labelR11)
+            .set("LabelR12", to: data.labels.labelR12)
+            .set("LabelR13", to: data.labels.labelR13)
+            .set("LabelR14", to: data.labels.labelR14)
+            .set("LabelR15", to: data.labels.labelR15)
+            .where("controllino_id", .equal, data.serialNumber)
+            .run()
+            .transform(to: .ok)
+    }
 }
 
 extension PinsLabels {
+    struct Modify: Content {
+        let serialNumber: Controllino.IDValue
+        var labels: PinsLabels.Labels
+    }
+    
     struct Labels: Content {
         let labelA0: String?
         let labelA1: String?
@@ -54,15 +167,15 @@ extension PinsLabels {
         let labelA7: String?
         let labelA8: String?
         let labelA9: String?
-        let labelA10: String?
-        let labelA11: String?
-        let labelA12: String?
-        let labelA13: String?
-        let labelA14: String?
-        let labelA15: String?
-        let labelI16: String?
-        let labelI17: String?
-        let labelI18: String?
+        var labelA10: String?
+        var labelA11: String?
+        var labelA12: String?
+        var labelA13: String?
+        var labelA14: String?
+        var labelA15: String?
+        var labelI16: String?
+        var labelI17: String?
+        var labelI18: String?
         let labelInt0: String?
         let labelInt1: String?
         
@@ -78,18 +191,18 @@ extension PinsLabels {
         let labelD9: String?
         let labelD10: String?
         let labelD11: String?
-        let labelD12: String?
-        let labelD13: String?
-        let labelD14: String?
-        let labelD15: String?
-        let labelD16: String?
-        let labelD17: String?
-        let labelD18: String?
-        let labelD19: String?
-        let labelD20: String?
-        let labelD21: String?
-        let labelD22: String?
-        let labelD23: String?
+        var labelD12: String?
+        var labelD13: String?
+        var labelD14: String?
+        var labelD15: String?
+        var labelD16: String?
+        var labelD17: String?
+        var labelD18: String?
+        var labelD19: String?
+        var labelD20: String?
+        var labelD21: String?
+        var labelD22: String?
+        var labelD23: String?
         
         let labelR0: String?
         let labelR1: String?
@@ -101,11 +214,11 @@ extension PinsLabels {
         let labelR7: String?
         let labelR8: String?
         let labelR9: String?
-        let labelR10: String?
-        let labelR11: String?
-        let labelR12: String?
-        let labelR13: String?
-        let labelR14: String?
-        let labelR15: String?
+        var labelR10: String?
+        var labelR11: String?
+        var labelR12: String?
+        var labelR13: String?
+        var labelR14: String?
+        var labelR15: String?
     }
 }
