@@ -32,4 +32,6 @@ func routes(_ app: Application) throws {
     tokenGroup.post("deleteControllinos", use: controllinoController.deleteControllino)
     tokenGroup.post("updateControllino", use: controllinoController.updateControllino)
     tokenGroup.post("updateControllinoIp", use: controllinoController.updateIpAdress)
+    tokenGroup.post("updateOnePin", ":pin", use: controllinoController.updateOnePin)
+    tokenGroup.post("updateAllPins", use: controllinoController.updateAllPins)
 }

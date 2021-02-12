@@ -9,6 +9,9 @@ import Fluent
 import Vapor
 
 final class Controllino: Model, Content {
+    static let pinsList = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "I16", "I17", "I18", "INT0", "INT1",
+                           "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23",
+                           "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"]
     static let schema: String = "controllino"
     
     // Controllino infos
