@@ -12,6 +12,7 @@ func routes(_ app: Application) throws {
     // Controllers
     let userController = UserController()
     let controllinoController = ControllinoController()
+    let pinsLabelsController = PinsLabelsController()
     
     // Group creation
     let basicGroup = app.grouped(User.authenticator()).grouped(User.guardMiddleware())
@@ -34,4 +35,7 @@ func routes(_ app: Application) throws {
     tokenGroup.post("updateControllinoIp", use: controllinoController.updateIpAdress)
     tokenGroup.post("updateOnePin", ":pin", use: controllinoController.updateOnePin)
     tokenGroup.post("updateAllPins", use: controllinoController.updateAllPins)
+    
+    // Labels controller routes
+    tokenGroup.get("getAllLabels", use: pinsLabelsController.getAllLabels)
 }
