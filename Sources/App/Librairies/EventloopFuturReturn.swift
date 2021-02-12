@@ -6,7 +6,6 @@
 //
 
 import Fluent
-//import FluentSQL
 import Vapor
 
 struct EventLoopFutureReturn {
