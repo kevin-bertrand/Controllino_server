@@ -20,7 +20,7 @@ struct UserMigration: Migration {
             .case(UsersRights.none.rawValue)
             .create()
             .flatMap { rights in
-                return database.schema("users")
+                return database.schema(User.schema)
                     .id()
                     .field("email", .string, .required)
                     .field("firstname", .string, .required)
@@ -44,7 +44,7 @@ struct UserMigration: Migration {
     
     // Delete DB
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema("users").delete()
+        database.schema(User.schema).delete()
     }
 }
 

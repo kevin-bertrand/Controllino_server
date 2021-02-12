@@ -29,9 +29,9 @@ struct AlarmsMigration: Migration {
                             .case(OperationVerification.equal.rawValue)
                             .create()
                             .flatMap { operationVerification in
-                                return database.schema("alarms")
+                                return database.schema(Alarms.schema)
                                     .id()
-                                    .field("controllino_id", .string, .required, .references("controllino", "serial_number"))
+                                    .field("controllino_id", .string, .required, .references(Controllino.schema, "serial_number"))
                                     .field("pin_to_verify", .string, .required)
                                     .field("type_of_verification", typeOfVerification, .required)
                                     .field("operation", operationVerification, .required)
@@ -56,7 +56,7 @@ struct AlarmsMigration: Migration {
     
     // Delete DB
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("alarms").delete()
+        return database.schema(Alarms.schema).delete()
     }
 }
 

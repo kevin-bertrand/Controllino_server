@@ -61,7 +61,11 @@ struct UserController {
                 var userList: [User.List] = []
                 
                 for user in users {
-                    userList.append(User.List(email: user.email, firstname: user.firstname, name: user.name ?? "", rights: user.rights, jobTitle: user.jobTitle ?? ""))
+                    userList.append(User.List(email: user.email,
+                                              firstname: user.firstname,
+                                              name: user.name ?? "",
+                                              rights: user.rights,
+                                              jobTitle: user.jobTitle ?? ""))
                 }
                 
                 return userList
@@ -73,7 +77,7 @@ struct UserController {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
         let receivedData = try req.content.decode(User.Delete.self)
-        var query = "DELETE FROM users WHERE "
+        var query = "DELETE FROM \(User.schema) WHERE "
         var firstEmail = true
         
         for email in receivedData.emails {
@@ -105,8 +109,14 @@ struct UserController {
                     return false
                 }
             }, else: Abort(HttpStatus().send(status: .wrongPassword)))
+            .guard({ user -> Bool in
+                return user != nil
+            }, else: Abort(HttpStatus().send(status: .userDoesntExist, with: "")))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { user -> EventLoopFuture<HTTPStatus> in
-                updatePassword(user, inside: req, with: receivedData)
+                updatePassword(user!, inside: req.db as! SQLDatabase, with: receivedData)
             }
     }
     
@@ -122,14 +132,29 @@ struct UserController {
             .guard({ _ -> Bool in
                 return userAuth.rights == .admin || userAuth.rights == .superAdmin || userAuth.email == receivedData.email
             }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ user -> Bool in
+                return user != nil
+            }, else: Abort(HttpStatus().send(status: .userDoesntExist, with: "")))
+            .guard({ _ -> Bool in
+               return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { user -> EventLoopFuture<HTTPStatus> in
-                updateUser(user, inside: req, with: receivedData, by: userAuth)
+                updateUser(user!, inside: req.db as! SQLDatabase, with: receivedData, by: userAuth)
             }
     }
     
     /*
      Private functions
      */
+    // This function checks if the DB of the request is an SQL DB
+    private func checkSqlDB(of req: Request) -> Bool {
+        if let _ = req.db as? SQLDatabase {
+            return true
+        } else {
+            return false
+        }
+    }
+    
     // This function check rights from the create of a user and return the correct right from the enum 'Rights'
     private func checkNewUserRights(_ data: String) -> UsersRights {
         let rights: UsersRights
@@ -149,42 +174,32 @@ struct UserController {
         return rights
     }
     
-    private func updatePassword(_ user: User?, inside req: Request, with data: User.ChangePassword) -> EventLoopFuture<HTTPStatus> {
-        if let user = user,
-           let sql = req.db as? SQLDatabase {
-            return sql.update("users")
-                .set("password_hash", to: data.newPassword)
-                .where("email", .equal, user.email)
+    private func updatePassword(_ user: User, inside sql: SQLDatabase, with data: User.ChangePassword) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(User.schema)
+            .set("password_hash", to: data.newPassword)
+            .where("email", .equal, user.email)
+            .run()
+            .transform(to: .ok)
+    }
+    
+    private func updateUser(_ user: User, inside sql: SQLDatabase, with data: User.Update, by ask: User) -> EventLoopFuture<HTTPStatus> {
+        if user.email == ask.email && ask.rights != .admin && ask.rights != .superAdmin {
+            return sql.update(User.schema)
+                .set("name", to: data.name)
+                .set("firstname", to: data.firstname)
+                .set("job_title", to: data.jobTitle)
+                .where("email", .equal, data.email)
                 .run()
                 .transform(to: .ok)
         } else {
-            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
-        }
-    }
-    
-    private func updateUser(_ user: User?, inside req: Request, with data: User.Update, by ask: User) -> EventLoopFuture<HTTPStatus> {
-        if let user = user,
-           let sql = req.db as? SQLDatabase {
-            if user.email == ask.email && ask.rights != .admin && ask.rights != .superAdmin {
-                return sql.update("users")
-                    .set("name", to: data.name)
-                    .set("firstname", to: data.firstname)
-                    .set("job_title", to: data.jobTitle)
-                    .where("email", .equal, data.email)
-                    .run()
-                    .transform(to: .ok)
-            } else {
-                return sql.update("users")
-                    .set("rights", to: data.rights)
-                    .set("name", to: data.name)
-                    .set("firstname", to: data.firstname)
-                    .set("job_title", to: data.jobTitle)
-                    .where("email", .equal, data.email)
-                    .run()
-                    .transform(to: .ok)
-            }
-        } else {
-            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
+            return sql.update(User.schema)
+                .set("rights", to: data.rights)
+                .set("name", to: data.name)
+                .set("firstname", to: data.firstname)
+                .set("job_title", to: data.jobTitle)
+                .where("email", .equal, data.email)
+                .run()
+                .transform(to: .ok)
         }
     }
     

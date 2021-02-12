@@ -20,7 +20,11 @@ struct ControllinoController {
         
         // Try to decode received data
         let receivedData = try req.content.decode(Controllino.Create.self)
-        let controllino = Controllino(id: receivedData.serialNumber, type: checkType(receivedData.type), latitude: receivedData.latitude, longitude: receivedData.longitude, ipAddress: receivedData.ipAddress)
+        let controllino = Controllino(id: receivedData.serialNumber,
+                                      type: checkType(receivedData.type),
+                                      latitude: receivedData.latitude,
+                                      longitude: receivedData.longitude,
+                                      ipAddress: receivedData.ipAddress)
         let labels = PinsLabels(controllinoId: controllino.id ?? "error")
         
         return Controllino.query(on: req.db)
@@ -29,9 +33,11 @@ struct ControllinoController {
                 return userAuth.rights == .admin || userAuth.rights == .superAdmin || userAuth.rights == .user
             }, else: Abort(HttpStatus().send(status: .unauthorize)))
             .flatMap { _ -> EventLoopFuture<HTTPStatus> in
-                return controllino.save(on: req.db).transform(to: HttpStatus().send(status: .created))
+                return controllino.save(on: req.db)
+                    .transform(to: HttpStatus().send(status: .created))
             }.flatMap { _ -> EventLoopFuture<HTTPStatus> in
-                return labels.save(on: req.db).transform(to: HttpStatus().send(status: .created))
+                return labels.save(on: req.db)
+                    .transform(to: HttpStatus().send(status: .created))
             }
     }
     
@@ -40,9 +46,9 @@ struct ControllinoController {
         // Get user after authentification
         let userAuth = try req.auth.require(User.self)
         let receivedData = try req.content.decode(Controllino.Delete.self)
-        var queryControllino = "DELETE FROM controllino WHERE "
-        var queryLabels = "DELETE FROM pins_labels WHERE "
-        var queryAlarms = "DELETE FROM alarms WHERE "
+        var queryControllino = "DELETE FROM \(Controllino.schema) WHERE "
+        var queryLabels = "DELETE FROM \(PinsLabels.schema) WHERE "
+        var queryAlarms = "DELETE FROM \(Alarms.schema) WHERE "
         var firstSerialNumber = true
         
         for serialNumber in receivedData.serialNumbers {
@@ -59,10 +65,20 @@ struct ControllinoController {
         }
         
         return performSqlQueries(inside: req, with: queryAlarms, by: userAuth)
+            .guard({ status -> Bool in
+                return status == .ok
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { _ in
                 return performSqlQueries(inside: req, with: queryLabels, by: userAuth)
+                    .guard({ status -> Bool in
+                        return status == .ok
+                    }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
                     .flatMap { _ in
                         return performSqlQueries(inside: req, with: queryControllino, by: userAuth)
+                            .guard({ status -> Bool in
+                                return status == .ok
+                            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
+                            .transform(to: .ok)
                     }
             }
     }
@@ -81,7 +97,11 @@ struct ControllinoController {
                 var controllinoList: [Controllino.List] = []
                 
                 for controllino in controllinos {
-                    controllinoList.append(Controllino.List(serialNumber: controllino.id!, type: controllino.type, latitude: controllino.latitude, longitude: controllino.longitude, ipAddress: controllino.ipAddress ?? "0.0.0.0"))
+                    controllinoList.append(Controllino.List(serialNumber: controllino.id!,
+                                                            type: controllino.type,
+                                                            latitude: controllino.latitude,
+                                                            longitude: controllino.longitude,
+                                                            ipAddress: controllino.ipAddress ?? "0.0.0.0"))
                 }
                 
                 return controllinoList
@@ -120,17 +140,21 @@ struct ControllinoController {
             .guard({ _ -> Bool in
                 return userAuth.rights == .user || userAuth.rights == .admin || userAuth.rights == .superAdmin
             }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { controllino -> EventLoopFuture<HTTPStatus> in
                 if controllino!.type != type {
                     typeIsChanged = true
                 }
-                return updateControllinoInfos(controllino!, inside: req, with: receivedData, and: type)
-                    .flatMap { status -> EventLoopFuture<HTTPStatus> in
-                        if status != .ok {
-                            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
-                        }
+                return updateControllinoInfos(controllino!, inside: req.db as! SQLDatabase, with: receivedData, and: type)
+                    .flatMap { _ -> EventLoopFuture<HTTPStatus> in
                         if typeIsChanged {
                             return updateControllinoType(type, at: receivedData.serialNumber, inside: req, by: userAuth)
+                                .guard({ status -> Bool in
+                                    return status == .ok
+                                }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
+                                .transform(to: .ok)
                         } else {
                             return EventLoopFutureReturn().errorHttpStatus(on: req, withError: .ok)
                         }
@@ -152,8 +176,11 @@ struct ControllinoController {
             .guard({ _ -> Bool in
                 return checkIpFormat(receivedData.ipAddress)
             }, else: Abort(HttpStatus().send(status: .wrongIp, with: receivedData.ipAddress)))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { controllino -> EventLoopFuture<HTTPStatus> in
-                return updateIpAddress(inside: req, with: receivedData)
+                return updateIpAddress(inside: req.db as! SQLDatabase, with: receivedData)
             }
     }
     
@@ -174,16 +201,12 @@ struct ControllinoController {
             }, else: Abort(HttpStatus().send(status: .wrongSerialNumber, with: receivedData.serialNumber)))
             .guard({ _ -> Bool in
                 return pin != nil
-            }, else: Abort(HttpStatus().send(status: .wrongPin, with: pin ?? "")))
+            }, else: Abort(HttpStatus().send(status: .wrongPin, with: "")))
             .guard({ _ -> Bool in
                 return Controllino.pinsList.contains(pin!)
             }, else: Abort(HttpStatus().send(status: .wrongPin, with: pin!)))
             .guard({ _ -> Bool in
-                if let _ = req.db as? SQLDatabase {
-                    return true
-                } else {
-                    return false
-                }
+                return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { _ -> EventLoopFuture<HTTPStatus> in
                 updateOnePin(with: receivedData.serialNumber, inside: req.db as! SQLDatabase, at: pin!, value: receivedData.value, at: date)
@@ -204,11 +227,7 @@ struct ControllinoController {
                 return controllino != nil
             }, else: Abort(HttpStatus().send(status: .wrongSerialNumber, with: receivedData.serialNumber)))
             .guard({ _ -> Bool in
-                if let _ = req.db as? SQLDatabase {
-                    return true
-                } else {
-                    return false
-                }
+                return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .flatMap { controllino -> EventLoopFuture<HTTPStatus> in
                 if controllino!.type == .maxi {
@@ -247,6 +266,15 @@ struct ControllinoController {
     /*
      Private functions
      */
+    // This function checks if the DB of the request is an SQL DB
+    private func checkSqlDB(of req: Request) -> Bool {
+        if let _ = req.db as? SQLDatabase {
+            return true
+        } else {
+            return false
+        }
+    }
+    
     // This function check the type of the controllino. If the type is not correctly set, it will be set into Controllino Maxi
     private func checkType(_ type: String) -> ControllinoType {
         if type.lowercased() == "mega" {
@@ -286,36 +314,28 @@ struct ControllinoController {
         }
     }
     
-    private func updateIpAddress(inside req: Request, with data: Controllino.UpdateIP) -> EventLoopFuture<HTTPStatus> {
-        if let sql = req.db as? SQLDatabase {
-            return sql.update("controllino")
-                .set("ip_address", to: data.ipAddress)
-                .where("serial_number", .equal, data.serialNumber)
-                .run()
-                .transform(to: .ok)
-        } else {
-            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
-        }
+    private func updateIpAddress(inside sql: SQLDatabase, with data: Controllino.UpdateIP) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(Controllino.schema)
+            .set("ip_address", to: data.ipAddress)
+            .where("serial_number", .equal, data.serialNumber)
+            .run()
+            .transform(to: .ok)
     }
     
-    private func updateControllinoInfos(_ controllino: Controllino, inside req: Request, with data: Controllino.Update, and type: ControllinoType) -> EventLoopFuture<HTTPStatus> {
-        if let sql = req.db as? SQLDatabase {
-            return sql.update("controllino")
-                .set("latitude", to: data.latitude)
-                .set("longitude", to: data.longitude)
-                .set("serial_number", to: data.serialNumber)
-                .set("type", to: type)
-                .set("last_modification_date", to: Date.init())
-                .where("serial_number", .equal, controllino.id)
-                .run()
-                .transform(to: .ok)
-        } else {
-            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
-        }
+    private func updateControllinoInfos(_ controllino: Controllino, inside sql: SQLDatabase, with data: Controllino.Update, and type: ControllinoType) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(Controllino.schema)
+            .set("latitude", to: data.latitude)
+            .set("longitude", to: data.longitude)
+            .set("serial_number", to: data.serialNumber)
+            .set("type", to: type)
+            .set("last_modification_date", to: Date.init())
+            .where("serial_number", .equal, controllino.id)
+            .run()
+            .transform(to: .ok)
     }
     
     private func updateControllinoType(_ type: ControllinoType, at id: String, inside req: Request, by user: User) -> EventLoopFuture<HTTPStatus> {
-        var query = "UPDATE controllino "
+        var query = "UPDATE \(Controllino.schema) "
         switch type {
         case .maxi:
             query += "SET A10 = NULL, "

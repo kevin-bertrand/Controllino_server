@@ -10,9 +10,9 @@ import Vapor
 
 struct PinsLabelsMigration: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema("pins_labels")
+        database.schema(PinsLabels.schema)
             .id()
-            .field("controllino_id", .string, .required, .references("controllino", "serial_number"))
+            .field("controllino_id", .string, .required, .references(Controllino.schema, "serial_number"))
             .field("LabelA0", .string)
             .field("LabelA1", .string)
             .field("LabelA2", .string)
@@ -79,6 +79,6 @@ struct PinsLabelsMigration: Migration {
     }
     
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema("pins_labels").delete()
+        database.schema(PinsLabels.schema).delete()
     }
 }

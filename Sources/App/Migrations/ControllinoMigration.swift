@@ -18,7 +18,7 @@ struct ControllinoMigration: Migration {
             .case(ControllinoType.maxi.rawValue)
             .create()
             .flatMap { controllinoType in
-                return database.schema("controllino")
+                return database.schema(Controllino.schema)
                     .field("serial_number", .string, .required)
                     .field("type", controllinoType, .required)
                     .field("latitude", .double, .required)
@@ -94,6 +94,6 @@ struct ControllinoMigration: Migration {
     
     // Delete DB
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("controllino").delete()
+        return database.schema(Controllino.schema).delete()
     }
 }
