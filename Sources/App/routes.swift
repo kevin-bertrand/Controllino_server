@@ -45,4 +45,5 @@ func routes(_ app: Application) throws {
     
     // Alarms controller routes
     tokenGroup.post("addAlarm", use: alarmsController.addAlarms)
+    tokenGroup.get("getAllAlarms", use: alarmsController.getAllAlarms)
 }

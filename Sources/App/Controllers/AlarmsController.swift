@@ -51,6 +51,19 @@ struct AlarmsController {
             }
     }
     
+    func getAllAlarms(req: Request) throws -> EventLoopFuture<[Alarms]> {
+        let userAuth = try req.auth.require(User.self)
+
+        return Alarms.query(on: req.db)
+            .all()
+            .guard({ _ -> Bool in
+                return userAuth.rights != .none && userAuth.rights != .controller
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .map { alarms -> [Alarms] in
+                return alarms
+            }
+    }
+    
     /*
      Private functions
      */
