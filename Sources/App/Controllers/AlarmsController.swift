@@ -64,6 +64,21 @@ struct AlarmsController {
             }
     }
     
+    func getAlarmsForOneController(req: Request) throws -> EventLoopFuture<[Alarms]> {
+        let userAuth = try req.auth.require(User.self)
+        let serialNumber = req.parameters.get("serialNumber")
+        
+        return Alarms.query(on: req.db)
+            .filter(\.$controllino.$id == serialNumber ?? "")
+            .all()
+            .guard({ _ -> Bool in
+                return userAuth.rights != .none && userAuth.rights != .controller
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .map { alarms -> [Alarms] in
+                return alarms
+            }
+    }
+    
     /*
      Private functions
      */
