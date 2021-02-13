@@ -73,22 +73,22 @@ final class Alarms: Model, Content {
         self.pinToVerify = pinToVerify
         self.typeOfVerification = typeOfVerification
         self.operation = operation
-        self.expression = pinToVerify
+        self.expression = self.pinToVerify
         
         switch operation {
         case .different:
-            self.expression += "!="
+            self.expression += " != "
         case .equal:
-            self.expression += "=="
+            self.expression += " == "
         }
         
         switch self.typeOfVerification {
         case .boolean:
             self.pinState = pinState
-            self.expression += String(pinState!)
+            self.expression += String(self.pinState!)
         case .twoPin:
             self.secondPin = secondPin
-            self.expression += secondPin!
+            self.expression += self.secondPin!
         }
         
         self.severity = severity

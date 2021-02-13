@@ -13,6 +13,7 @@ func routes(_ app: Application) throws {
     let userController = UserController()
     let controllinoController = ControllinoController()
     let pinsLabelsController = PinsLabelsController()
+    let alarmsController = AlarmsController()
     
     // Group creation
     let basicGroup = app.grouped(User.authenticator()).grouped(User.guardMiddleware())
@@ -41,4 +42,7 @@ func routes(_ app: Application) throws {
     tokenGroup.get("getAllLabels", use: pinsLabelsController.getAllLabels)
     tokenGroup.get("getOneControllerLabels", ":serialNumber", use: pinsLabelsController.getOneControllerLabels)
     tokenGroup.post("modifyLabels", use: pinsLabelsController.modifyLabels)
+    
+    // Alarms controller routes
+    tokenGroup.post("addAlarm", use: alarmsController.addAlarms)
 }
