@@ -117,9 +117,55 @@ struct AlarmsController {
         return performSqlQueries(inside: req, with: query, by: userAuth)
     }
     
+    func switchOffOnAlarm(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let userAuth = try req.auth.require(User.self)
+        let receivedData = try req.content.decode(Alarms.UpdateActivation.self)
+        
+        return Alarms.query(on: req.db)
+            .filter(\.$id == UUID(uuidString: receivedData.id) ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .admin || userAuth.rights == .user || userAuth.rights == .superAdmin
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ alarm -> Bool in
+                return alarm != nil
+            }, else: Abort(HttpStatus().send(status: .alarmDoesntExist, with: receivedData.id)))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
+            .flatMap { Alarms -> EventLoopFuture<HTTPStatus> in
+                var date: Date?
+                
+                if receivedData.state {
+                    date = Date.init()
+                } else {
+                    date = nil
+                }
+                
+                return updateActivation(of: UUID(uuidString: receivedData.id)!, to: receivedData.state, inside: getSqlDB(of: req), at: date)
+            }
+    }
+    
     /*
      Private functions
      */
+    private func checkSqlDB(of req: Request) -> Bool {
+        return req.db is SQLDatabase
+    }
+    
+    private func getSqlDB(of req: Request) -> SQLDatabase {
+        return req.db as! SQLDatabase
+    }
+    
+    private func updateActivation(of alarm: UUID, to state: Bool, inside sql: SQLDatabase, at date: Date?) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(Alarms.schema)
+            .set("isActive", to: state)
+            .set("activationDate", to: date)
+            .where("id", .equal, alarm)
+            .run()
+            .transform(to: .ok)
+    }
+    
     private func split(expression: String) -> [String] {
         return expression.components(separatedBy: " ")
     }
@@ -183,7 +229,7 @@ extension Alarms {
     }
     
     struct UpdateActivation: Content {
-        let id: UUID
+        let id: String
         let state: Bool
     }
     

@@ -52,6 +52,9 @@ final class Alarms: Model, Content {
     @Field(key: "isAccepted")
     var isAccepted: Bool
     
+    @OptionalField(key: "activationDate")
+    var isActivateDate: Date?
+    
     @OptionalField(key: "isInAlarmDate")
     var isInAlarmDate: Date?
         
@@ -96,6 +99,8 @@ final class Alarms: Model, Content {
         self.isActive = true
         self.isInAlarm = false
         self.isAccepted = false
+        
+        self.isActivateDate = Date.init()
     }
 }
 

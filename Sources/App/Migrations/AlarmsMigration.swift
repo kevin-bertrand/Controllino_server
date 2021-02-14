@@ -43,6 +43,7 @@ struct AlarmsMigration: Migration {
                                     .field("isActive", .bool)
                                     .field("isInAlarm", .bool)
                                     .field("isAccepted", .bool)
+                                    .field("activationDate", .datetime)
                                     .field("isInAlarmDate", .datetime)
                                     .field("isAcceptedDate", .datetime)
                                     .field("lastVerification", .datetime)
