@@ -135,7 +135,7 @@ struct AlarmsController {
             .guard({ _ -> Bool in
                 return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
-            .flatMap { Alarms -> EventLoopFuture<HTTPStatus> in
+            .flatMap { _ -> EventLoopFuture<HTTPStatus> in
                 var date: Date?
                 
                 if receivedData.state {
@@ -145,6 +145,27 @@ struct AlarmsController {
                 }
                 
                 return updateActivation(of: UUID(uuidString: receivedData.id)!, to: receivedData.state, inside: getSqlDB(of: req), at: date)
+            }
+    }
+    
+    func updateAlarm(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let userAuth = try req.auth.require(User.self)
+        let receivedData = try req.content.decode(Alarms.Update.self)
+        
+        return Alarms.query(on: req.db)
+            .filter(\.$id == UUID(uuidString: receivedData.id) ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .admin || userAuth.rights == .user || userAuth.rights == .superAdmin
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ alarm -> Bool in
+                return alarm != nil
+            }, else: Abort(HttpStatus().send(status: .alarmDoesntExist, with: receivedData.id)))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
+            .flatMap { _ -> EventLoopFuture<HTTPStatus> in
+                return updateAlarm(inside: getSqlDB(of: req), with: receivedData)
             }
     }
     
@@ -164,6 +185,16 @@ struct AlarmsController {
             .set("isActive", to: state)
             .set("activationDate", to: date)
             .where("id", .equal, alarm)
+            .run()
+            .transform(to: .ok)
+    }
+    
+    private func updateAlarm(inside sql: SQLDatabase, with data: Alarms.Update) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(Alarms.schema)
+            .set("inhibits_all_alarms", to: data.inhibitsAllAlarms)
+            .set("time_between_two_verifications", to: data.timeBetweenTwoVerifications)
+            .set("time_between_verification_and_notification", to: data.timeBetweenVerificationAndNotification)
+            .where("id", .equal, data.id)
             .run()
             .transform(to: .ok)
     }
@@ -239,5 +270,12 @@ extension Alarms {
     
     struct Delete: Content {
         let ids: [String]
+    }
+    
+    struct Update: Content {
+        let id: String
+        let inhibitsAllAlarms: Bool
+        let timeBetweenTwoVerifications: Int
+        let timeBetweenVerificationAndNotification: Int
     }
 }

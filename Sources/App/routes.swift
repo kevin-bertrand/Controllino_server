@@ -47,6 +47,7 @@ func routes(_ app: Application) throws {
     tokenGroup.post("addAlarm", use: alarmsController.addAlarms)
     tokenGroup.post("deleteAlarms", use: alarmsController.deleteAlarm)
     tokenGroup.post("toggleAlarmActivation", use: alarmsController.switchOffOnAlarm)
+    tokenGroup.post("updateAlarm", use: alarmsController.updateAlarm)
     tokenGroup.get("getAllAlarms", use: alarmsController.getAllAlarms)
     tokenGroup.get("getAlarms", ":serialNumber", use: alarmsController.getAlarmsForOneController)
     tokenGroup.get("getAlarm", ":id", use: alarmsController.getAlarm)
