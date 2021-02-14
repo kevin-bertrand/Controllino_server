@@ -79,6 +79,24 @@ struct AlarmsController {
             }
     }
     
+    func getAlarm(req: Request) throws -> EventLoopFuture<Alarms> {
+        let userAuth = try req.auth.require(User.self)
+        let id = req.parameters.get("id")
+        
+        return Alarms.query(on: req.db)
+            .filter(\.$id == UUID(uuidString: id ?? "") ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights != .none && userAuth.rights != .controller
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ alarm -> Bool in
+                return alarm != nil
+            }, else: Abort(HttpStatus().send(status: .alarmDoesntExist, with: id ?? "")))
+            .map { alarm -> Alarms in
+                return alarm!
+            }
+    }
+    
     /*
      Private functions
      */
