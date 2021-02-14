@@ -91,7 +91,7 @@ struct ControllinoController {
         return Controllino.query(on: req.db)
             .all()
             .guard({ _ -> Bool in
-                return userAuth.rights == .user || userAuth.rights == .admin || userAuth.rights == .superAdmin
+                return userAuth.rights == .user || userAuth.rights == .admin || userAuth.rights == .superAdmin || userAuth.rights == .supervisor
             }, else: Abort(HttpStatus().send(status: .unauthorize)))
             .map { controllinos -> [Controllino.List] in
                 var controllinoList: [Controllino.List] = []
@@ -110,11 +110,16 @@ struct ControllinoController {
     
     // Get a unique Controllinos from database
     func getUniqueControllino(req: Request) throws -> EventLoopFuture<Controllino> {
+        // Get user after authentification
+        let userAuth = try req.auth.require(User.self)
         let serialNumber = req.parameters.get("serialNumber")
         
         return Controllino.query(on: req.db)
             .filter(\.$id == serialNumber ?? "")
             .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights == .user || userAuth.rights == .admin || userAuth.rights == .superAdmin || userAuth.rights == .supervisor
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
             .guard({ controllino -> Bool in
                 return controllino != nil
             }, else: Abort(HttpStatus().send(status: .wrongSerialNumber, with: serialNumber ?? "")))
