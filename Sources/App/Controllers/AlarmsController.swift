@@ -55,6 +55,8 @@ struct AlarmsController {
         let userAuth = try req.auth.require(User.self)
 
         return Alarms.query(on: req.db)
+            .sort(\.$controllino.$id)
+            .sort(\.$isInAlarm, .descending)
             .all()
             .guard({ _ -> Bool in
                 return userAuth.rights != .none && userAuth.rights != .controller
