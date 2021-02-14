@@ -46,7 +46,9 @@ struct AlarmsController {
                                       secondPin: typeOfVerification == .boolean ? nil : expression[2],
                                       pinState: typeOfVerification == .twoPin ? nil : Bool(expression[2].lowercased()),
                                       severity: checkSeverity(receivedData.severity)!,
-                                      inhibitsAllAlarms: receivedData.inhibitsAllAlarms)
+                                      inhibitsAllAlarms: receivedData.inhibitsAllAlarms,
+                                      timeBetweenTwoVerifications: receivedData.timeBetweenTwoVerifications,
+                                      timeBetweenVerificationAndNotification: receivedData.timeBetweenVerificationAndNotification)
                 return newAlarm.save(on: req.db).transform(to: HttpStatus().send(status: .ok))
             }
     }
@@ -226,6 +228,8 @@ extension Alarms {
         let expression: String
         let severity: String
         let inhibitsAllAlarms: Bool
+        let timeBetweenTwoVerifications: Int
+        let timeBetweenVerificationAndNotification: Int
     }
     
     struct UpdateActivation: Content {

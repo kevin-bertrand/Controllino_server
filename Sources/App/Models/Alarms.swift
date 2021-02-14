@@ -52,6 +52,12 @@ final class Alarms: Model, Content {
     @Field(key: "isAccepted")
     var isAccepted: Bool
     
+    @Field(key: "time_between_two_verifications")
+    var timeBetweenTwoVerifications: Int
+    
+    @Field(key: "time_between_verification_and_notification")
+    var timeBetweenVerificationAndNotification: Int
+    
     @OptionalField(key: "activationDate")
     var isActivateDate: Date?
     
@@ -70,7 +76,7 @@ final class Alarms: Model, Content {
     // Inititalization functions
     init() { }
     
-    init(id: UUID? = nil, controllinoId: Controllino.IDValue, pinToVerify: String, typeOfVerification: TypeOfVerification, operation: OperationVerification, secondPin: String? = nil, pinState: Bool? = nil, severity: Severity, inhibitsAllAlarms: Bool) {
+    init(id: UUID? = nil, controllinoId: Controllino.IDValue, pinToVerify: String, typeOfVerification: TypeOfVerification, operation: OperationVerification, secondPin: String? = nil, pinState: Bool? = nil, severity: Severity, inhibitsAllAlarms: Bool, timeBetweenTwoVerifications: Int, timeBetweenVerificationAndNotification: Int) {
         self.id = id
         self.$controllino.id = controllinoId
         self.pinToVerify = pinToVerify
@@ -99,7 +105,8 @@ final class Alarms: Model, Content {
         self.isActive = true
         self.isInAlarm = false
         self.isAccepted = false
-        
+        self.timeBetweenTwoVerifications = timeBetweenTwoVerifications
+        self.timeBetweenVerificationAndNotification = timeBetweenVerificationAndNotification
         self.isActivateDate = Date.init()
     }
 }
