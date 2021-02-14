@@ -99,6 +99,24 @@ struct AlarmsController {
             }
     }
     
+    func deleteAlarm(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let userAuth = try req.auth.require(User.self)
+        let receivedData = try req.content.decode(Alarms.Delete.self)
+        var query = "DELETE FROM \(Alarms.schema) WHERE "
+        var firstId = true
+        
+        for id in receivedData.ids {
+            if !firstId {
+                query += " OR "
+            }
+            
+            query += "id == \"\(id)\""
+            firstId = false
+        }
+        
+        return performSqlQueries(inside: req, with: query, by: userAuth)
+    }
+    
     /*
      Private functions
      */
@@ -145,6 +163,15 @@ struct AlarmsController {
             return nil
         }
     }
+    
+    private func performSqlQueries(inside req: Request, with query: String, by user: User) -> EventLoopFuture<HTTPStatus> {
+        if let sql = req.db as? SQLDatabase,
+           user.rights == .superAdmin || user.rights == .admin || user.rights == .user {
+            return sql.raw(SQLQueryString(query)).run().transform(to: .ok)
+        } else {
+            return EventLoopFutureReturn().errorHttpStatus(on: req, withError: HttpStatus().send(status: .unableToReachDb))
+        }
+    }
 }
 
 extension Alarms {
@@ -158,5 +185,9 @@ extension Alarms {
     struct UpdateActivation: Content {
         let id: UUID
         let state: Bool
+    }
+    
+    struct Delete: Content {
+        let ids: [String]
     }
 }
