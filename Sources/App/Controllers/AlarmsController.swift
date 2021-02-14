@@ -169,6 +169,30 @@ struct AlarmsController {
             }
     }
     
+    func acceptAlarm(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let userAuth = try req.auth.require(User.self)
+        let id = req.parameters.get("id")
+        
+        return Alarms.query(on: req.db)
+            .filter(\.$id == UUID(uuidString: id ?? "") ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+            .first()
+            .guard({ _ -> Bool in
+                return userAuth.rights != .none && userAuth.rights != .controller
+            }, else: Abort(HttpStatus().send(status: .unauthorize)))
+            .guard({ alarm -> Bool in
+                return alarm != nil
+            }, else: Abort(HttpStatus().send(status: .alarmDoesntExist, with: id ?? "")))
+            .guard({ _ -> Bool in
+                return checkSqlDB(of: req)
+            }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
+            .guard({ alarm -> Bool in
+                return alarm!.isInAlarm
+            }, else: Abort(HttpStatus().send(status: .isNotInAlarm, with: id!)))
+            .flatMap { _ -> EventLoopFuture<HTTPStatus> in
+                return acceptAlarm(inside: getSqlDB(of: req), for: UUID(uuidString: id!)!)
+            }
+    }
+    
     /*
      Private functions
      */
@@ -195,6 +219,15 @@ struct AlarmsController {
             .set("time_between_two_verifications", to: data.timeBetweenTwoVerifications)
             .set("time_between_verification_and_notification", to: data.timeBetweenVerificationAndNotification)
             .where("id", .equal, data.id)
+            .run()
+            .transform(to: .ok)
+    }
+    
+    private func acceptAlarm(inside sql: SQLDatabase, for alarm: UUID) -> EventLoopFuture<HTTPStatus> {
+        return sql.update(Alarms.schema)
+            .set("isAccepted", to: true)
+            .set("isAcceptedDate", to: Date.init())
+            .where("id", .equal, alarm)
             .run()
             .transform(to: .ok)
     }

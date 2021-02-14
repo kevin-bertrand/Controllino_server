@@ -39,6 +39,8 @@ struct HttpStatus {
             statusToSend = HTTPResponseStatus(statusCode: 480, reasonPhrase: "This alarm already exists!")
         case .alarmDoesntExist:
             statusToSend = HTTPResponseStatus(statusCode: 481, reasonPhrase: "Alarm with id \"\(data)\" doesn't exists!")
+        case .isNotInAlarm:
+            statusToSend = HTTPResponseStatus(statusCode: 482, reasonPhrase: "Alarm with id \"\(data)\" is not in alarm!")
         case .expressionIsNotValid:
             statusToSend = HTTPResponseStatus(statusCode: 490, reasonPhrase: "Expression \"\(data)\" is not valid")
         case .severityIsNotValid:
@@ -65,6 +67,7 @@ enum HttpStatusEnum {
     case userDoesntExist
     case alarmAlreadyExists
     case alarmDoesntExist
+    case isNotInAlarm
     case expressionIsNotValid
     case severityIsNotValid
     case unableToReachDb
