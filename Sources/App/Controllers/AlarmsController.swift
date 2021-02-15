@@ -48,7 +48,7 @@ struct AlarmsController {
                                       severity: checkSeverity(receivedData.severity)!,
                                       inhibitsAllAlarms: receivedData.inhibitsAllAlarms,
                                       timeBetweenTwoVerifications: receivedData.timeBetweenTwoVerifications,
-                                      timeBetweenVerificationAndNotification: receivedData.timeBetweenVerificationAndNotification)
+                                      timeBetweenDetectionAndNotification: receivedData.timeBetweenDetectionAndNotification)
                 return newAlarm.save(on: req.db).transform(to: HttpStatus().send(status: .ok))
             }
     }
@@ -169,7 +169,7 @@ struct AlarmsController {
             }
     }
     
-    func acceptAlarm(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    func acquitsAlarm(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let userAuth = try req.auth.require(User.self)
         let id = req.parameters.get("id")
         
@@ -189,7 +189,7 @@ struct AlarmsController {
                 return alarm!.state == .inAlarm
             }, else: Abort(HttpStatus().send(status: .isNotInAlarm, with: id!)))
             .flatMap { _ -> EventLoopFuture<HTTPStatus> in
-                return acceptAlarm(inside: getSqlDB(of: req), for: UUID(uuidString: id!)!)
+                return acquitsAlarm(inside: getSqlDB(of: req), for: UUID(uuidString: id!)!)
             }
     }
     
@@ -217,16 +217,16 @@ struct AlarmsController {
         return sql.update(Alarms.schema)
             .set("inhibits_all_alarms", to: data.inhibitsAllAlarms)
             .set("time_between_two_verifications", to: data.timeBetweenTwoVerifications)
-            .set("time_between_verification_and_notification", to: data.timeBetweenVerificationAndNotification)
+            .set("time_between_detection_and_notification", to: data.timeBetweenDetectionAndNotification)
             .where("id", .equal, data.id)
             .run()
             .transform(to: .ok)
     }
     
-    private func acceptAlarm(inside sql: SQLDatabase, for alarm: UUID) -> EventLoopFuture<HTTPStatus> {
+    private func acquitsAlarm(inside sql: SQLDatabase, for alarm: UUID) -> EventLoopFuture<HTTPStatus> {
         return sql.update(Alarms.schema)
             .set("state", to: AlarmState.acquitted)
-            .set("isAcceptedDate", to: Date.init())
+            .set("is_acquitted_date", to: Date.init())
             .where("id", .equal, alarm)
             .run()
             .transform(to: .ok)
@@ -293,7 +293,7 @@ extension Alarms {
         let severity: String
         let inhibitsAllAlarms: Bool
         let timeBetweenTwoVerifications: Int
-        let timeBetweenVerificationAndNotification: Int
+        let timeBetweenDetectionAndNotification: Int
     }
     
     struct UpdateActivation: Content {
@@ -309,6 +309,6 @@ extension Alarms {
         let id: String
         let inhibitsAllAlarms: Bool
         let timeBetweenTwoVerifications: Int
-        let timeBetweenVerificationAndNotification: Int
+        let timeBetweenDetectionAndNotification: Int
     }
 }

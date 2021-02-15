@@ -50,11 +50,11 @@ struct AlarmsMigration: Migration {
                                             .field("state", state, .required)
                                             .field("activationDate", .datetime)
                                             .field("isInAlarmDate", .datetime)
-                                            .field("isAcceptedDate", .datetime)
+                                            .field("is_acquitted_date", .datetime)
                                             .field("lastVerification", .datetime)
                                             .field("detectionDate", .datetime)
                                             .field("time_between_two_verifications", .int, .required)
-                                            .field("time_between_verification_and_notification", .int, .required)
+                                            .field("time_between_detection_and_notification", .int, .required)
                                             .unique(on: "expression")
                                             .create()
                                     }

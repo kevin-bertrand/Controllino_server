@@ -49,8 +49,8 @@ final class Alarms: Model, Content {
     @Field(key: "time_between_two_verifications")
     var timeBetweenTwoVerifications: Int
     
-    @Field(key: "time_between_verification_and_notification")
-    var timeBetweenVerificationAndNotification: Int
+    @Field(key: "time_between_detection_and_notification")
+    var timeBetweenDetectionAndNotification: Int
     
     @OptionalField(key: "activationDate")
     var isActivateDate: Date?
@@ -58,8 +58,8 @@ final class Alarms: Model, Content {
     @OptionalField(key: "isInAlarmDate")
     var isInAlarmDate: Date?
         
-    @OptionalField(key: "isAcceptedDate")
-    var isAcceptedDate: Date?
+    @OptionalField(key: "is_acquitted_date")
+    var isAcquittedDate: Date?
     
     @OptionalField(key: "lastVerification")
     var lastVerification: Date?
@@ -70,7 +70,7 @@ final class Alarms: Model, Content {
     // Inititalization functions
     init() { }
     
-    init(id: UUID? = nil, controllinoId: Controllino.IDValue, pinToVerify: String, typeOfVerification: TypeOfVerification, operation: OperationVerification, secondPin: String? = nil, pinState: Bool? = nil, severity: Severity, inhibitsAllAlarms: Bool, timeBetweenTwoVerifications: Int, timeBetweenVerificationAndNotification: Int) {
+    init(id: UUID? = nil, controllinoId: Controllino.IDValue, pinToVerify: String, typeOfVerification: TypeOfVerification, operation: OperationVerification, secondPin: String? = nil, pinState: Bool? = nil, severity: Severity, inhibitsAllAlarms: Bool, timeBetweenTwoVerifications: Int, timeBetweenDetectionAndNotification: Int) {
         self.id = id
         self.$controllino.id = controllinoId
         self.pinToVerify = pinToVerify
@@ -98,7 +98,7 @@ final class Alarms: Model, Content {
         self.inhibitsAllAlarms = inhibitsAllAlarms
         self.state = .activate
         self.timeBetweenTwoVerifications = timeBetweenTwoVerifications
-        self.timeBetweenVerificationAndNotification = timeBetweenVerificationAndNotification
+        self.timeBetweenDetectionAndNotification = timeBetweenDetectionAndNotification
         self.isActivateDate = Date.init()
     }
 }
