@@ -43,14 +43,8 @@ final class Alarms: Model, Content {
     @Field(key: "inhibits_all_alarms")
     var inhibitsAllAlarms: Bool
     
-    @Field(key: "isActive")
-    var isActive: Bool
-    
-    @Field(key: "isInAlarm")
-    var isInAlarm: Bool
-    
-    @Field(key: "isAccepted")
-    var isAccepted: Bool
+    @Field(key: "state")
+    var state: AlarmState
     
     @Field(key: "time_between_two_verifications")
     var timeBetweenTwoVerifications: Int
@@ -102,9 +96,7 @@ final class Alarms: Model, Content {
         
         self.severity = severity
         self.inhibitsAllAlarms = inhibitsAllAlarms
-        self.isActive = true
-        self.isInAlarm = false
-        self.isAccepted = false
+        self.state = .activate
         self.timeBetweenTwoVerifications = timeBetweenTwoVerifications
         self.timeBetweenVerificationAndNotification = timeBetweenVerificationAndNotification
         self.isActivateDate = Date.init()
@@ -126,4 +118,11 @@ enum Severity: String, Codable {
     case warning
     case alert
     case critical
+}
+
+enum AlarmState: String, Codable {
+    case activate
+    case disactivate
+    case inAlarm
+    case acquitted
 }

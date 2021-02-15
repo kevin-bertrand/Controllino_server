@@ -58,7 +58,7 @@ struct AlarmsController {
 
         return Alarms.query(on: req.db)
             .sort(\.$controllino.$id)
-            .sort(\.$isInAlarm, .descending)
+            .sort(\.$state, .descending)
             .all()
             .guard({ _ -> Bool in
                 return userAuth.rights != .none && userAuth.rights != .controller
@@ -186,7 +186,7 @@ struct AlarmsController {
                 return checkSqlDB(of: req)
             }, else: Abort(HttpStatus().send(status: .unableToReachDb)))
             .guard({ alarm -> Bool in
-                return alarm!.isInAlarm
+                return alarm!.state == .inAlarm
             }, else: Abort(HttpStatus().send(status: .isNotInAlarm, with: id!)))
             .flatMap { _ -> EventLoopFuture<HTTPStatus> in
                 return acceptAlarm(inside: getSqlDB(of: req), for: UUID(uuidString: id!)!)
@@ -206,8 +206,8 @@ struct AlarmsController {
     
     private func updateActivation(of alarm: UUID, to state: Bool, inside sql: SQLDatabase, at date: Date?) -> EventLoopFuture<HTTPStatus> {
         return sql.update(Alarms.schema)
-            .set("isActive", to: state)
             .set("activationDate", to: date)
+            .set("state", to: state ? AlarmState.activate : AlarmState.disactivate)
             .where("id", .equal, alarm)
             .run()
             .transform(to: .ok)
@@ -225,7 +225,7 @@ struct AlarmsController {
     
     private func acceptAlarm(inside sql: SQLDatabase, for alarm: UUID) -> EventLoopFuture<HTTPStatus> {
         return sql.update(Alarms.schema)
-            .set("isAccepted", to: true)
+            .set("state", to: AlarmState.acquitted)
             .set("isAcceptedDate", to: Date.init())
             .where("id", .equal, alarm)
             .run()
